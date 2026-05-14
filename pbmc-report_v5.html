@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PBMC Isolation Report — Interlink</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --color-primary: #7C3AED;
+    --color-primary-light: #A78BFA;
+    --color-accent-green: #84CC16;
+    --color-accent-neon: #ddff1a;
+    --color-surface: #FFFFFF;
+    --color-bg: #F3F2EF;
+    --color-dark: #1A1A1A;
+    --color-dark-surface: #2A2A2A;
+    --color-text: #1A1A1A;
+    --color-text-secondary: #6B7280;
+    --color-text-muted: #9CA3AF;
+    --color-border: #E5E5E5;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .report-wrap {
+    max-width: 740px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  /* ---- HEADER ---- */
+  .report-header {
+    background: var(--color-dark);
+    color: #fff;
+    padding: 1.5rem 0;
+    border-bottom: 2px solid var(--color-accent-neon);
+  }
+  .report-header .report-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .header-brand .sep { color: var(--color-accent-neon); opacity: 0.7; }
+  .header-brand .report-type { opacity: 0.7; font-weight: 400; }
+  .header-meta {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+  .header-meta span { white-space: nowrap; }
+
+  /* ---- HERO ---- */
+  .hero-section {
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    padding: 3rem 0 2.5rem;
+  }
+  .hero-headline {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 700;
+    font-size: 2.2rem;
+    line-height: 1.15;
+    color: var(--color-text);
+    margin-bottom: 0.75rem;
+  }
+  .hero-headline .hero-accent { color: var(--color-primary); }
+  .hero-sub {
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+  .hero-sub strong { color: var(--color-text); font-weight: 600; }
+  .hero-member-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1.25rem;
+    padding: 0.35rem 0.85rem;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 100px;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
+
+  /* ---- KPI BAR ---- */
+  .kpi-bar {
+    background: var(--color-dark-surface);
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--color-accent-neon);
+    border-bottom: 1px solid var(--color-accent-neon);
+  }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+  }
+  .kpi-item {
+    text-align: center;
+    padding: 0.5rem 0.25rem;
+    position: relative;
+  }
+  .kpi-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 15%;
+    height: 70%;
+    width: 1px;
+    background: rgba(255,255,255,0.1);
+  }
+  .kpi-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-bottom: 0.35rem;
+    font-weight: 500;
+  }
+  .kpi-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.1;
+  }
+  .kpi-unit {
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: var(--color-text-muted);
+    letter-spacing: 0.04em;
+    margin-top: 0.15rem;
+  }
+
+  /* ---- SNAPSHOT SECTION (range + viability + timeline above tabs) ---- */
+  .snapshot-section {
+    background: var(--color-surface);
+    padding: 2rem 0 2.25rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .snapshot-grid {
+    display: grid;
+    grid-template-columns: 1fr 180px;
+    gap: 2rem;
+    align-items: start;
+  }
+  .snapshot-section .section-label {
+    margin-bottom: 0.75rem;
+  }
+
+  /* ---- TAB NAV ---- */
+  .tab-nav-wrapper {
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .tab-nav {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 0.9rem 0.5rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .tab-btn:hover { color: var(--color-text-secondary); }
+  .tab-btn.active {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+    font-weight: 600;
+  }
+
+  /* ---- TAB PANELS ---- */
+  .tab-content { padding: 2rem 0 3rem; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ---- CARDS ---- */
+  .card {
+    background: var(--color-surface);
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    padding: 2rem;
+    margin-bottom: 1.25rem;
+  }
+  .card-title {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    margin-bottom: 1.25rem;
+    color: var(--color-text);
+  }
+  .section-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-bottom: 1rem;
+  }
+
+  /* ---- METRIC GRID ---- */
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--color-border);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .metric-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .metric-cell {
+    background: var(--color-surface);
+    padding: 1rem 1.15rem;
+  }
+  .metric-cell-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-bottom: 0.3rem;
+  }
+  .metric-cell-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+  .metric-cell-value.accent { color: var(--color-primary); }
+
+  /* ---- TABLE ---- */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .data-table tr { border-bottom: 1px solid var(--color-border); }
+  .data-table tr:last-child { border-bottom: none; }
+  .data-table td {
+    padding: 0.7rem 0;
+    font-size: 0.88rem;
+    vertical-align: top;
+  }
+  .data-table td:first-child {
+    color: var(--color-text-secondary);
+    padding-right: 1.5rem;
+    width: 45%;
+  }
+  .data-table td:last-child { font-weight: 600; }
+
+  /* ---- QC CHECKLIST ---- */
+  .qc-list { list-style: none; }
+  .qc-item {
+    display: flex;
+    align-items: center;
+    padding: 0.85rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .qc-item:last-child { border-bottom: none; }
+  .qc-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 0.85rem;
+  }
+  .qc-icon.pass { background: var(--color-primary); }
+  .qc-icon.fail { background: #EF4444; }
+  .qc-icon svg { width: 14px; height: 14px; }
+  .qc-info { flex: 1; }
+  .qc-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--color-text);
+  }
+  .qc-desc {
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+    margin-top: 0.1rem;
+  }
+  .qc-result {
+    font-weight: 700;
+    font-size: 0.88rem;
+    margin-left: 1rem;
+    white-space: nowrap;
+  }
+  .qc-result.pass { color: var(--color-accent-green); }
+  .qc-result.fail { color: #EF4444; }
+
+  /* ---- QC SUMMARY PILLS ---- */
+  .qc-summary {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+  .qc-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .qc-pill.pass { background: rgba(132,204,22,0.1); color: #65A30D; }
+  .qc-pill.fail { background: rgba(239,68,68,0.1); color: #EF4444; }
+  .qc-pill-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .qc-pill.pass .qc-pill-dot { background: var(--color-accent-green); }
+  .qc-pill.fail .qc-pill-dot { background: #EF4444; }
+
+  /* ---- VIABILITY RING ---- */
+  .viability-ring-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .viability-ring-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-top: 0.5rem;
+  }
+
+  /* ---- HORIZONTAL BAR ---- */
+  .hbar-track {
+    position: relative;
+    height: 32px;
+    background: var(--color-bg);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 0.35rem;
+  }
+  .hbar-fill {
+    height: 100%;
+    background: var(--color-primary);
+    border-radius: 6px;
+    transition: width 0.6s ease;
+    display: flex;
+    align-items: center;
+    padding-left: 0.75rem;
+  }
+  .hbar-fill-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .hbar-group { margin-bottom: 1.25rem; }
+  .hbar-title {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-text);
+    margin-bottom: 0.5rem;
+  }
+
+  /* ---- RANGE BAR ---- */
+  .range-vis {
+    position: relative;
+    height: 36px;
+    background: var(--color-bg);
+    border-radius: 6px;
+    margin: 0.5rem 0 0.4rem;
+    overflow: visible;
+  }
+  .range-expected {
+    position: absolute;
+    top: 0; bottom: 0;
+    background: rgba(124,58,237,0.08);
+    border-left: 2px dashed var(--color-primary-light);
+    border-right: 2px dashed var(--color-primary-light);
+    border-radius: 4px;
+  }
+  .range-actual {
+    position: absolute;
+    top: 4px; bottom: 4px;
+    left: 0;
+    background: var(--color-primary);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 0.6rem;
+  }
+  .range-actual-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    white-space: nowrap;
+  }
+
+  /* ---- METHOD BADGE ---- */
+  .method-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(124,58,237,0.06);
+    border: 1px solid rgba(124,58,237,0.15);
+    color: var(--color-primary);
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.25rem;
+  }
+
+  /* ---- TIMELINE ---- */
+  .timeline {
+    position: relative;
+    padding-left: 1.75rem;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 6px;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    background: var(--color-border);
+  }
+  .timeline-item {
+    position: relative;
+    padding-bottom: 1rem;
+  }
+  .timeline-item:last-child { padding-bottom: 0; }
+  .timeline-dot {
+    position: absolute;
+    left: -1.75rem;
+    top: 3px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--color-primary);
+    background: var(--color-surface);
+  }
+  .timeline-item:first-child .timeline-dot,
+  .timeline-item:last-child .timeline-dot {
+    background: var(--color-primary);
+  }
+  .timeline-time {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-bottom: 0.05rem;
+  }
+  .timeline-text {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--color-text);
+  }
+
+  /* ---- CRYO VIAL VIS ---- */
+  .vial-grid {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin: 0.5rem 0;
+  }
+  .vial-icon {
+    width: 30px;
+    height: 44px;
+    background: rgba(124,58,237,0.08);
+    border: 2px solid var(--color-primary);
+    border-radius: 4px 4px 8px 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .vial-icon.storage {
+    border-color: var(--color-primary-light);
+  }
+  .vial-icon::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 65%;
+    background: var(--color-primary);
+    opacity: 0.2;
+    border-radius: 0 0 6px 6px;
+  }
+  .vial-icon.storage::before {
+    background: var(--color-primary-light);
+  }
+  .vial-icon::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 25%; right: 25%;
+    height: 5px;
+    background: var(--color-primary);
+    border-radius: 0 0 2px 2px;
+  }
+  .vial-icon.storage::after {
+    background: var(--color-primary-light);
+  }
+  .vial-batch-group { margin-bottom: 1.25rem; }
+  .vial-batch-group:last-child { margin-bottom: 0; }
+  .vial-batch-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.35rem;
+  }
+  .vial-batch-name {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+  .vial-batch-detail {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+  }
+
+  /* ---- STORAGE BAR ---- */
+  .storage-bar {
+    background: var(--color-dark-surface);
+    border-radius: 12px;
+    border: 1px solid var(--color-accent-neon);
+    padding: 1.5rem 2rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1.25rem;
+  }
+  .storage-item-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-bottom: 0.25rem;
+  }
+  .storage-item-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  /* ---- PHENOTYPE ---- */
+  .comp-bar-wrap { margin-bottom: 0.75rem; }
+  .comp-bar-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-bottom: 0.4rem;
+  }
+  .comp-bar {
+    display: flex;
+    height: 28px;
+    border-radius: 6px;
+    overflow: hidden;
+    gap: 2px;
+  }
+  .comp-seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    position: relative;
+    cursor: default;
+  }
+  .comp-seg-inner {
+    font-size: 0.58rem;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+  .comp-bar-sub {
+    height: 18px;
+    border-radius: 4px;
+    margin-top: 3px;
+  }
+  .comp-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    margin-top: 0.6rem;
+  }
+  .comp-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    color: var(--color-text-secondary);
+  }
+  .comp-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .comp-legend-item strong {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+  .pheno-tcell-split {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  /* ---- PHENO DEEP DIVE TABLE ---- */
+  .pheno-deep-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .pheno-deep-table th {
+    text-align: left;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    padding: 0 0 0.65rem;
+    border-bottom: 2px solid var(--color-border);
+  }
+  .pheno-deep-table td {
+    padding: 0.7rem 0;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: top;
+  }
+  .pheno-deep-table tr:last-child td { border-bottom: none; }
+  .pheno-deep-table td:nth-child(1) { width: 60px; font-weight: 700; color: var(--color-text); }
+  .pheno-deep-table td:nth-child(2) { color: var(--color-text-secondary); padding-right: 0.75rem; }
+  .pheno-deep-table td:nth-child(3) { font-weight: 700; text-align: right; white-space: nowrap; padding-left: 0.5rem; }
+  .pheno-marker-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    margin-right: 0.35rem;
+    vertical-align: middle;
+  }
+  .pheno-child-row td { padding-left: 1.5rem; font-size: 0.82rem; }
+  .pheno-child-row td:nth-child(3) { color: var(--color-text-secondary); font-weight: 600; }
+  .pheno-desc-text {
+    font-size: 0.73rem;
+    color: var(--color-text-muted);
+    margin-top: 0.1rem;
+    line-height: 1.4;
+  }
+
+  /* ---- FOOTER ---- */
+  .report-footer {
+    background: var(--color-dark);
+    color: #fff;
+    padding: 1.5rem 0;
+    border-top: 2px solid var(--color-accent-neon);
+  }
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .footer-ids {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.6;
+  }
+  .footer-tagline {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.8rem;
+    font-style: italic;
+    opacity: 0.4;
+  }
+
+  /* ---- PRINT ---- */
+  @media print {
+    .tab-nav-wrapper { display: none !important; }
+    .tab-panel { display: block !important; page-break-inside: avoid; }
+    .tab-panel::before {
+      content: attr(data-print-title);
+      display: block;
+      font-family: 'Source Serif 4', serif;
+      font-weight: 700;
+      font-size: 1.15rem;
+      margin-bottom: 1rem;
+      padding-top: 1.5rem;
+      border-top: 2px solid var(--color-border);
+    }
+    body { background: #fff; }
+    .report-header, .kpi-bar, .report-footer, .storage-bar { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+
+  /* ---- RESPONSIVE ---- */
+  @media (max-width: 640px) {
+    .hero-headline { font-size: 1.65rem; }
+    .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+    .snapshot-grid { grid-template-columns: 1fr; }
+    .metric-grid, .metric-grid.cols-3 { grid-template-columns: 1fr 1fr; }
+    .storage-bar { grid-template-columns: 1fr; }
+    .card { padding: 1.5rem; }
+    .header-meta { gap: 0.75rem; }
+    .footer-inner { flex-direction: column; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div id="report-root"></div>
+
+<script>
+// ===== DATA LAYER =====
+const REPORT_DATA = {
+  meta: {
+    reportType: "PBMC ISOLATION REPORT",
+    brand: "Interlink",
+    reportDate: "April 7, 2026",
+    drawDate: "April 1, 2026",
+    batchId: "ISO-2026-017"
+  },
+  member: {
+    id: "FM-00001",
+    name: "John"
+  },
+  bloodCollection: {
+    volume_ml: 150,
+    anticoagulant: "EDTA",
+    collection_time: "12:45 PM",
+    transport_temp_c: 22,
+    time_to_processing_hrs: 18
+  },
+  isolation: {
+    method: "Ficoll-Paque Density Gradient",
+    gradient_quality: "Clean interface",
+    centrifugation_speed_g: 800,
+    centrifugation_time_min: 30,
+    washes: 2,
+    processing_time_hrs: 3.5,
+    operator: "J. Nelson"
+  },
+  yield: {
+    total_cells: 180000000,
+    cells_per_ml_blood: 1200000,
+    viability_pct: 96.8,
+    expected_range_low: 75000000,
+    expected_range_high: 200000000,
+    historical_avg_yield_per_ml: 1000000
+  },
+  qcChecks: [
+    { name: "Cell viability", desc: "Trypan blue exclusion", result: "96.8%", pass: true },
+    { name: "Cell count", desc: "Automated counter verified", result: "180M", pass: true },
+    { name: "Sterility", desc: "No contamination detected", result: "Pass", pass: true },
+    { name: "Mycoplasma", desc: "PCR assay", result: "Negative", pass: true },
+    { name: "Gradient quality", desc: "Visual interface assessment", result: "Clean", pass: true },
+    { name: "RBC contamination", desc: "Pellet color assessment", result: "Minimal", pass: true }
+  ],
+  cryopreservation: {
+    batches: [
+      { label: "Processing Batch",    cells_per_vial: 5000000,  total_cells: 50000000,  vials: 10 },
+      { label: "Long-Term Storage Batch", cells_per_vial: 10000000, total_cells: 130000000, vials: 13 }
+    ],
+    cryoprotectant: "10% DMSO",
+    controlled_rate_freeze: true,
+    storage_temp_c: -196,
+    storage_location: "Cambridge, MA",
+    freeze_date: "April 7, 2026"
+  },
+  immunophenotyping: {
+    cd45_pct: 91.66,
+    populations: [
+      { marker: "CD3+",  pct: 18.22, label: "T Cells",      color: "#7C3AED", parent: null,   parentNote: null },
+      { marker: "CD4+",  pct: 75.14, label: "Helper T",     color: "#A78BFA", parent: "CD3+", parentNote: "of CD3+" },
+      { marker: "CD8+",  pct: 23.39, label: "Cytotoxic T",  color: "#C4B5FD", parent: "CD3+", parentNote: "of CD3+" },
+      { marker: "CD14+", pct: 10.05, label: "Monocytes",    color: "#F59E0B", parent: null,   parentNote: null },
+      { marker: "CD19+", pct:  7.43, label: "B Cells",      color: "#06B6D4", parent: null,   parentNote: null },
+      { marker: "CD56+", pct: 19.88, label: "NK Cells",     color: "#84CC16", parent: null,   parentNote: null }
+    ],
+    descriptions: {
+      "CD45+": "Pan-leukocyte marker — confirms the isolated population is white blood cells",
+      "CD3+":  "T lymphocytes — adaptive immune cells that coordinate and execute immune responses",
+      "CD4+":  "Helper T cells — orchestrate immune responses by activating other immune cells",
+      "CD8+":  "Cytotoxic T cells — directly kill infected or abnormal cells",
+      "CD14+": "Monocytes — innate immune cells that can become macrophages or dendritic cells",
+      "CD19+": "B lymphocytes — produce antibodies and support long-term immune memory",
+      "CD56+": "Natural killer cells — innate immune cells that rapidly target abnormal cells"
+    }
+  }
+};
+
+// Derived: total vials across batches
+REPORT_DATA.cryopreservation.total_vials = REPORT_DATA.cryopreservation.batches.reduce((s, b) => s + b.vials, 0);
+
+
+// ===== COMPONENTS =====
+
+function formatCells(n) {
+  if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(0) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
+  return n.toString();
+}
+
+function renderHeader(data) {
+  const { meta } = data;
+  return `
+    <header class="report-header">
+      <div class="report-wrap">
+        <div class="header-brand">
+          <span>${meta.brand}</span>
+          <span class="sep">&middot;</span>
+          <span class="report-type">${meta.reportType}</span>
+        </div>
+        <div class="header-meta">
+          <span>${meta.reportDate}</span>
+          <span>${meta.batchId}</span>
+        </div>
+      </div>
+    </header>`;
+}
+
+function renderHero(data) {
+  const { member, yield: y, cryopreservation: c } = data;
+  return `
+    <section class="hero-section">
+      <div class="report-wrap">
+        <h1 class="hero-headline">Isolation complete.<br><span class="hero-accent">${formatCells(y.total_cells)} cells</span> preserved.</h1>
+        <p class="hero-sub">
+          <strong>${y.viability_pct}%</strong> viability &nbsp;&middot;&nbsp;
+          <strong>${c.total_vials}</strong> vials frozen &nbsp;&middot;&nbsp;
+          <strong>${y.cells_per_ml_blood >= 1e6 ? (y.cells_per_ml_blood / 1e6).toFixed(1) + 'M' : formatCells(y.cells_per_ml_blood)}</strong> cells per mL
+        </p>
+        <div class="hero-member-tag">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
+          ${member.name} &nbsp;&middot;&nbsp; ${member.id}
+        </div>
+      </div>
+    </section>`;
+}
+
+function renderKPIBar(data) {
+  const { yield: y, cryopreservation: c } = data;
+  const kpis = [
+    { label: 'Total Yield', value: formatCells(y.total_cells), unit: 'cells' },
+    { label: 'Viability', value: y.viability_pct + '%', unit: 'trypan blue' },
+    { label: 'Vials Frozen', value: c.total_vials, unit: c.batches.length + ' batches' },
+  ];
+  return `
+    <section class="kpi-bar">
+      <div class="report-wrap">
+        <div class="kpi-grid">
+          ${kpis.map(k => `
+            <div class="kpi-item">
+              <div class="kpi-label">${k.label}</div>
+              <div class="kpi-value">${k.value}</div>
+              <div class="kpi-unit">${k.unit}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+    </section>`;
+}
+
+function renderSnapshot(data) {
+  const { yield: y, bloodCollection: bc, isolation: iso, meta } = data;
+
+  // Range bar math
+  const scaleMax = Math.max(y.total_cells, y.expected_range_high) * 1.2;
+  const actualPct = (y.total_cells / scaleMax) * 100;
+  const lowPct = (y.expected_range_low / scaleMax) * 100;
+  const highPct = (y.expected_range_high / scaleMax) * 100;
+
+  const aboveRange = y.total_cells > y.expected_range_high;
+  const belowRange = y.total_cells < y.expected_range_low;
+  const rangeNote = aboveRange
+    ? '<span style="color:var(--color-accent-green);font-weight:600;">\u2713 Yield exceeds expected range</span>'
+    : belowRange
+      ? '<span style="color:#EF4444;font-weight:600;">\u26A0 Yield below expected range</span>'
+      : '<span style="color:var(--color-accent-green);font-weight:600;">\u2713 Yield within expected range</span>';
+
+  // Viability ring
+  const viab = y.viability_pct;
+  const radius = 52;
+  const circumference = 2 * Math.PI * radius;
+  const fillLen = (viab / 100) * circumference;
+  const gapLen = circumference - fillLen;
+
+  // Timeline
+  const timeline = [
+    { time: meta.drawDate + ', ' + bc.collection_time, text: 'Blood draw — ' + bc.volume_ml + ' mL' },
+    { time: bc.time_to_processing_hrs + ' hrs later', text: 'Received at lab, ' + bc.transport_temp_c + '°C verified' },
+    { time: 'Processing', text: iso.method },
+    { time: '+' + iso.processing_time_hrs + ' hrs', text: 'Isolation complete — ' + formatCells(y.total_cells) + ' cells' },
+  ];
+
+  return `
+    <section class="snapshot-section">
+      <div class="report-wrap">
+        <div class="snapshot-grid">
+          <div>
+            <div class="section-label">Total Yield vs. Expected Range</div>
+            <div style="font-size:0.82rem;color:var(--color-text-secondary);margin-bottom:0.5rem;">
+              <strong style="color:var(--color-text)">${formatCells(y.total_cells)}</strong> cells from ${bc.volume_ml} mL &nbsp;·&nbsp;
+              Expected: ${formatCells(y.expected_range_low)}&ndash;${formatCells(y.expected_range_high)}
+            </div>
+            <div class="range-vis">
+              <div class="range-expected" style="left:${lowPct}%;width:${highPct - lowPct}%"></div>
+              <div class="range-actual" style="width:${actualPct}%">
+                <span class="range-actual-label">${formatCells(y.total_cells)}</span>
+              </div>
+            </div>
+            <div style="position:relative;height:18px;font-size:0.55rem;color:var(--color-text-muted);letter-spacing:0.04em;">
+              <span style="position:absolute;left:0;">0</span>
+              <span style="position:absolute;left:${lowPct}%;transform:translateX(-50%);">${formatCells(y.expected_range_low)}</span>
+              <span style="position:absolute;left:${highPct}%;transform:translateX(-50%);">${formatCells(y.expected_range_high)}</span>
+            </div>
+            <div style="font-size:0.75rem;margin-top:0.25rem;">${rangeNote}</div>
+          </div>
+          <div style="display:flex;justify-content:center;">
+            <div class="viability-ring-wrap">
+              <svg width="130" height="130" viewBox="0 0 130 130">
+                <circle cx="65" cy="65" r="${radius}" fill="none" stroke="var(--color-border)" stroke-width="10"/>
+                <circle cx="65" cy="65" r="${radius}" fill="none" stroke="var(--color-primary)" stroke-width="10"
+                  stroke-dasharray="${fillLen} ${gapLen}"
+                  stroke-dashoffset="${circumference * 0.25}"
+                  stroke-linecap="round"/>
+                <text x="65" y="60" text-anchor="middle" font-family="DM Sans" font-weight="700" font-size="24" fill="var(--color-text)">${viab}%</text>
+                <text x="65" y="78" text-anchor="middle" font-family="DM Sans" font-weight="500" font-size="9" fill="var(--color-text-muted)">VIABLE</text>
+              </svg>
+              <div class="viability-ring-label">Viability</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--color-border);">
+          <div class="section-label">Processing Timeline</div>
+          <div class="timeline">
+            ${timeline.map(t => `
+              <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-time">${t.time}</div>
+                <div class="timeline-text">${t.text}</div>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+    </section>`;
+}
+
+function renderTabNav() {
+  const tabs = [
+    { id: 'qc', label: 'QC Results' },
+    { id: 'yield', label: 'Yield Analysis' },
+    { id: 'cryo', label: 'Cryopreservation' },
+    { id: 'isolation', label: 'Isolation Details' },
+  ];
+  return `
+    <nav class="tab-nav-wrapper">
+      <div class="report-wrap">
+        <div class="tab-nav">
+          ${tabs.map((t, i) => `
+            <button class="tab-btn${i === 0 ? ' active' : ''}" data-tab="${t.id}">${t.label}</button>`).join('')}
+        </div>
+      </div>
+    </nav>`;
+}
+
+function renderQCTab(data) {
+  const { qcChecks } = data;
+  const passCount = qcChecks.filter(c => c.pass).length;
+  const failCount = qcChecks.length - passCount;
+  const checkSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const xSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+  return `
+    <div class="tab-panel active" id="panel-qc" data-print-title="QC Results">
+      <div class="card">
+        <div class="card-title">Quality Control Summary</div>
+        <div class="qc-summary">
+          <div class="qc-pill pass"><span class="qc-pill-dot"></span> ${passCount} Passed</div>
+          ${failCount > 0 ? '<div class="qc-pill fail"><span class="qc-pill-dot"></span> ' + failCount + ' Failed</div>' : ''}
+        </div>
+        <ul class="qc-list">
+          ${qcChecks.map(c => `
+            <li class="qc-item">
+              <div class="qc-icon ${c.pass ? 'pass' : 'fail'}">${c.pass ? checkSvg : xSvg}</div>
+              <div class="qc-info">
+                <div class="qc-name">${c.name}</div>
+                <div class="qc-desc">${c.desc}</div>
+              </div>
+              <div class="qc-result ${c.pass ? 'pass' : 'fail'}">${c.result}</div>
+            </li>`).join('')}
+        </ul>
+      </div>
+    </div>`;
+}
+
+function renderYieldTab(data) {
+  const { yield: y, bloodCollection: bc, immunophenotyping: ip } = data;
+
+  // Yield per mL bars
+  const yieldPerMl = y.cells_per_ml_blood;
+  const histAvg = y.historical_avg_yield_per_ml;
+  const maxBar = Math.max(yieldPerMl, histAvg) * 1.3;
+  const actualBarPct = (yieldPerMl / maxBar) * 100;
+  const histBarPct = (histAvg / maxBar) * 100;
+
+  // Viability ring (larger for tab)
+  const viab = y.viability_pct;
+  const radius = 60;
+  const circumference = 2 * Math.PI * radius;
+  const fillLen = (viab / 100) * circumference;
+  const gapLen = circumference - fillLen;
+
+  // Range bar (full version)
+  const scaleMax = Math.max(y.total_cells, y.expected_range_high) * 1.2;
+  const actualPct = (y.total_cells / scaleMax) * 100;
+  const lowPct = (y.expected_range_low / scaleMax) * 100;
+  const highPct = (y.expected_range_high / scaleMax) * 100;
+  const aboveRange = y.total_cells > y.expected_range_high;
+  const belowRange = y.total_cells < y.expected_range_low;
+  const rangeNote = aboveRange
+    ? '<span style="color:var(--color-accent-green);font-weight:600;">\u2713 Yield exceeds expected range</span>'
+    : belowRange
+      ? '<span style="color:#EF4444;font-weight:600;">\u26A0 Yield below expected range</span>'
+      : '<span style="color:var(--color-accent-green);font-weight:600;">\u2713 Yield within expected range</span>';
+
+  // Composition strip
+  let phenoHtml = '';
+  if (ip) {
+    const topLevel = ip.populations.filter(p => !p.parent);
+    const cd3 = ip.populations.find(p => p.marker === 'CD3+');
+    const cd3Children = ip.populations.filter(p => p.parent === 'CD3+');
+    const otherPct = Math.max(0, 100 - topLevel.reduce((s, p) => s + p.pct, 0));
+
+    phenoHtml = `
+      <div class="card">
+        <div class="card-title">Cell Composition</div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:1rem;">
+          <div class="comp-bar-label">PBMC Population Breakdown</div>
+          <div style="font-size:0.72rem;color:var(--color-text-muted);"><strong style="color:var(--color-text);font-weight:700;">${ip.cd45_pct}%</strong> CD45+ purity</div>
+        </div>
+        <div class="comp-bar">
+          ${topLevel.map(p => `<div class="comp-seg" style="flex:${p.pct};background:${p.color};" title="${p.label} (${p.marker}): ${p.pct}%"><span class="comp-seg-inner">${p.pct >= 10 ? p.pct.toFixed(0) + '%' : ''}</span></div>`).join('')}
+          ${otherPct > 0 ? `<div class="comp-seg" style="flex:${otherPct};background:var(--color-border);" title="Other: ${otherPct.toFixed(1)}%"><span class="comp-seg-inner" style="color:var(--color-text-muted);text-shadow:none;">${otherPct >= 8 ? otherPct.toFixed(0) + '%' : ''}</span></div>` : ''}
+        </div>
+        <div class="comp-legend">
+          ${topLevel.map(p => `<div class="comp-legend-item"><span class="comp-legend-dot" style="background:${p.color}"></span> <strong>${p.pct}%</strong> ${p.label}</div>`).join('')}
+          ${otherPct > 0 ? `<div class="comp-legend-item"><span class="comp-legend-dot" style="background:var(--color-border)"></span> <strong>${otherPct.toFixed(1)}%</strong> Other</div>` : ''}
+        </div>
+        ${cd3 && cd3Children.length > 0 ? `
+        <div class="pheno-tcell-split">
+          <div class="comp-bar-label">T Cell Split (of ${cd3.pct}% CD3+)</div>
+          <div class="comp-bar comp-bar-sub">
+            ${cd3Children.map(c => `<div class="comp-seg" style="flex:${c.pct};background:${c.color};"><span class="comp-seg-inner" style="font-size:0.55rem;">${c.pct}%</span></div>`).join('')}
+            ${(() => { const rem = Math.max(0, 100 - cd3Children.reduce((s, c) => s + c.pct, 0)); return rem > 1 ? '<div class="comp-seg" style="flex:' + rem + ';background:var(--color-border);"><span class="comp-seg-inner" style="font-size:0.55rem;color:var(--color-text-muted);text-shadow:none;">' + rem.toFixed(0) + '%</span></div>' : ''; })()}
+          </div>
+          <div class="comp-legend" style="margin-top:0.4rem;">
+            ${cd3Children.map(c => `<div class="comp-legend-item"><span class="comp-legend-dot" style="background:${c.color}"></span> <strong>${c.pct}%</strong> ${c.label}</div>`).join('')}
+          </div>
+        </div>` : ''}
+      </div>`;
+  }
+
+  return `
+    <div class="tab-panel" id="panel-yield" data-print-title="Yield Analysis">
+      <div class="card">
+        <div class="card-title">Total Yield vs. Expected Range</div>
+        <p style="font-size:0.82rem;color:var(--color-text-secondary);margin-bottom:0.75rem;">
+          Your isolation produced <strong style="color:var(--color-text)">${formatCells(y.total_cells)} cells</strong> from ${bc.volume_ml} mL of blood.
+          The expected range for this volume is ${formatCells(y.expected_range_low)}&ndash;${formatCells(y.expected_range_high)}.
+        </p>
+        <div class="range-vis">
+          <div class="range-expected" style="left:${lowPct}%;width:${highPct - lowPct}%"></div>
+          <div class="range-actual" style="width:${actualPct}%">
+            <span class="range-actual-label">${formatCells(y.total_cells)}</span>
+          </div>
+        </div>
+        <div style="position:relative;height:20px;font-size:0.6rem;color:var(--color-text-muted);letter-spacing:0.04em;margin-bottom:0.25rem;">
+          <span style="position:absolute;left:0;">0</span>
+          <span style="position:absolute;left:${lowPct}%;transform:translateX(-50%);text-align:center;line-height:1.2;">${formatCells(y.expected_range_low)}<br><span style="font-size:0.5rem;opacity:0.7;">low</span></span>
+          <span style="position:absolute;left:${highPct}%;transform:translateX(-50%);text-align:center;line-height:1.2;">${formatCells(y.expected_range_high)}<br><span style="font-size:0.5rem;opacity:0.7;">high</span></span>
+        </div>
+        <p style="font-size:0.75rem;margin-top:0.5rem;">${rangeNote}</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Yield per mL vs. Historical Average</div>
+        <div class="hbar-group">
+          <div class="hbar-title">Your result: ${(yieldPerMl / 1e6).toFixed(1)}M cells/mL</div>
+          <div class="hbar-track">
+            <div class="hbar-fill" style="width:${actualBarPct}%">
+              <span class="hbar-fill-label">${(yieldPerMl / 1e6).toFixed(1)}M</span>
+            </div>
+          </div>
+        </div>
+        <div class="hbar-group">
+          <div class="hbar-title" style="color:var(--color-text-secondary)">Historical average: ${(histAvg / 1e6).toFixed(1)}M cells/mL</div>
+          <div class="hbar-track">
+            <div class="hbar-fill" style="width:${histBarPct}%;background:var(--color-primary-light);opacity:0.6">
+              <span class="hbar-fill-label">${(histAvg / 1e6).toFixed(1)}M</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="text-align:center;">
+        <div class="card-title" style="text-align:left;">Cell Viability</div>
+        <div class="viability-ring-wrap" style="padding:1rem 0;">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="${radius}" fill="none" stroke="var(--color-border)" stroke-width="12"/>
+            <circle cx="80" cy="80" r="${radius}" fill="none" stroke="var(--color-primary)" stroke-width="12"
+              stroke-dasharray="${fillLen} ${gapLen}"
+              stroke-dashoffset="${circumference * 0.25}"
+              stroke-linecap="round"/>
+            <text x="80" y="74" text-anchor="middle" font-family="DM Sans" font-weight="700" font-size="28" fill="var(--color-text)">${viab}%</text>
+            <text x="80" y="96" text-anchor="middle" font-family="DM Sans" font-weight="500" font-size="11" fill="var(--color-text-muted)">VIABLE</text>
+          </svg>
+          <div class="viability-ring-label">Trypan Blue Exclusion Assay</div>
+        </div>
+      </div>
+
+      ${phenoHtml}
+    </div>`;
+}
+
+function renderCryoTab(data) {
+  const { cryopreservation: c } = data;
+  const totalVials = c.total_vials;
+  const totalBanked = c.batches.reduce((s, b) => s + b.total_cells, 0);
+
+  const protocolRows = [
+    ['Cryoprotectant', c.cryoprotectant],
+    ['Controlled-rate freeze', c.controlled_rate_freeze ? 'Yes' : 'No'],
+    ['Freeze date', c.freeze_date],
+  ];
+
+  return `
+    <div class="tab-panel" id="panel-cryo" data-print-title="Cryopreservation">
+      <div class="card">
+        <div class="card-title">Cryopreservation Summary</div>
+        <div class="metric-grid cols-3">
+          <div class="metric-cell">
+            <div class="metric-cell-label">Total Vials</div>
+            <div class="metric-cell-value accent">${totalVials}</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-cell-label">Batches</div>
+            <div class="metric-cell-value">${c.batches.length}</div>
+          </div>
+          <div class="metric-cell">
+            <div class="metric-cell-label">Total Banked</div>
+            <div class="metric-cell-value">${formatCells(totalBanked)}</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Vial Batches</div>
+        ${c.batches.map((b, i) => `
+          <div class="vial-batch-group">
+            <div class="vial-batch-header">
+              <span class="vial-batch-name">${b.label}</span>
+              <span class="vial-batch-detail">${b.vials} vials &middot; ${formatCells(b.cells_per_vial)} / vial &middot; ${formatCells(b.total_cells)} total</span>
+            </div>
+            <div class="vial-grid">
+              ${Array.from({length: b.vials}, () => '<div class="vial-icon' + (i > 0 ? ' storage' : '') + '"></div>').join('')}
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <div class="card">
+        <div class="section-label">Freeze Protocol</div>
+        <table class="data-table">
+          ${protocolRows.map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('')}
+        </table>
+      </div>
+
+      <div class="storage-bar">
+        <div>
+          <div class="storage-item-label">Storage Temp</div>
+          <div class="storage-item-value">${c.storage_temp_c}&deg;C</div>
+        </div>
+        <div>
+          <div class="storage-item-label">Location</div>
+          <div class="storage-item-value">${c.storage_location}</div>
+        </div>
+        <div>
+          <div class="storage-item-label">Medium</div>
+          <div class="storage-item-value">LN&#8322; Vapor</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderIsolationTab(data) {
+  const { bloodCollection: bc, isolation: iso, meta, immunophenotyping: ip } = data;
+
+  const collectionRows = [
+    ['Volume collected', bc.volume_ml + ' mL'],
+    ['Anticoagulant', bc.anticoagulant],
+    ['Collection time', bc.collection_time],
+    ['Transport temperature', bc.transport_temp_c + ' &deg;C'],
+    ['Time to processing', bc.time_to_processing_hrs + ' hours'],
+  ];
+
+  const isoRows = [
+    ['Centrifugation', iso.centrifugation_speed_g + ' &times; g for ' + iso.centrifugation_time_min + ' min'],
+    ['Gradient quality', iso.gradient_quality],
+    ['Washes', iso.washes + ' cycles'],
+    ['Processing time', iso.processing_time_hrs + ' hours'],
+    ['Operator', iso.operator],
+  ];
+
+  const timeline = [
+    { time: meta.drawDate + ', ' + bc.collection_time, text: 'Blood draw completed &mdash; ' + bc.volume_ml + ' mL collected' },
+    { time: bc.time_to_processing_hrs + ' hrs later', text: 'Sample received at lab, ' + bc.transport_temp_c + '&deg;C transport verified' },
+    { time: 'Processing start', text: 'Ficoll-Paque density gradient initiated' },
+    { time: '+' + iso.processing_time_hrs + ' hrs', text: 'Isolation complete &mdash; cells washed and resuspended' },
+  ];
+
+  // Phenotype deep dive
+  let phenoDeep = '';
+  if (ip) {
+    const topLevel = ip.populations.filter(p => !p.parent);
+    const children = ip.populations.filter(p => p.parent);
+    phenoDeep = `
+      <div class="card">
+        <div class="card-title">Immunophenotyping — Flow Cytometry</div>
+        <p style="font-size:0.82rem;color:var(--color-text-secondary);margin-bottom:1.25rem;">
+          Surface marker analysis by flow cytometry. CD45+ purity was <strong style="color:var(--color-text)">${ip.cd45_pct}%</strong>,
+          confirming a highly pure leukocyte population.
+        </p>
+        <table class="pheno-deep-table">
+          <thead><tr><th>Marker</th><th>Population</th><th>Result</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>CD45+</td>
+              <td>All leukocytes<div class="pheno-desc-text">${ip.descriptions['CD45+']}</div></td>
+              <td>${ip.cd45_pct}%</td>
+            </tr>
+            ${topLevel.map(p => {
+              const kids = children.filter(c => c.parent === p.marker);
+              let rows = `<tr>
+                <td><span class="pheno-marker-dot" style="background:${p.color}"></span>${p.marker}</td>
+                <td>${p.label}<div class="pheno-desc-text">${ip.descriptions[p.marker] || ''}</div></td>
+                <td>${p.pct}%</td>
+              </tr>`;
+              kids.forEach(k => {
+                rows += `<tr class="pheno-child-row">
+                  <td><span class="pheno-marker-dot" style="background:${k.color}"></span>${k.marker}</td>
+                  <td>${k.label} <span style="color:var(--color-text-muted);font-size:0.75rem;">${k.parentNote}</span><div class="pheno-desc-text">${ip.descriptions[k.marker] || ''}</div></td>
+                  <td>${k.pct}%</td>
+                </tr>`;
+              });
+              return rows;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  return `
+    <div class="tab-panel" id="panel-isolation" data-print-title="Isolation Details">
+      <div class="card">
+        <div class="section-label">Blood Collection</div>
+        <table class="data-table">
+          ${collectionRows.map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('')}
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Isolation Method</div>
+        <div class="method-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3v12l-3 3h12l-3-3V3"/><path d="M8 3h8"/></svg>
+          ${iso.method}
+        </div>
+        <table class="data-table">
+          ${isoRows.map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('')}
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Processing Timeline</div>
+        <div class="timeline">
+          ${timeline.map(t => `
+            <div class="timeline-item">
+              <div class="timeline-dot"></div>
+              <div class="timeline-time">${t.time}</div>
+              <div class="timeline-text">${t.text}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      ${phenoDeep}
+    </div>`;
+}
+
+function renderFooter(data) {
+  const { meta, member } = data;
+  return `
+    <footer class="report-footer">
+      <div class="report-wrap">
+        <div class="footer-inner">
+          <div class="footer-ids">
+            <span>${member.id}</span>
+            <span>${meta.batchId}</span>
+            <span>${meta.reportDate}</span>
+          </div>
+          <div class="footer-tagline">Your cells. Your future.</div>
+        </div>
+      </div>
+    </footer>`;
+}
+
+
+// ===== LAYOUT =====
+
+function assembleReport(data) {
+  return [
+    renderHeader(data),
+    renderHero(data),
+    renderKPIBar(data),
+    renderSnapshot(data),
+    renderTabNav(),
+    '<main class="tab-content"><div class="report-wrap">',
+    renderQCTab(data),
+    renderYieldTab(data),
+    renderCryoTab(data),
+    renderIsolationTab(data),
+    '</div></main>',
+    renderFooter(data),
+  ].join('');
+}
+
+// Mount
+document.getElementById('report-root').innerHTML = assembleReport(REPORT_DATA);
+
+// Tab interaction
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
