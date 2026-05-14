@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Colony Emergence · Cellino</title>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Serif+Display&display=swap" rel="stylesheet">
+
+<style>
+/* ===== DESIGN TOKENS ===== */
+:root {
+  --color-primary: #7C3AED;
+  --color-primary-light: #A78BFA;
+  --color-primary-glow: rgba(124,58,237,0.15);
+  --color-green: #65A30D;
+  --color-green-light: #84CC16;
+  --color-bg: #F3F2EF;
+  --color-bg-elevated: #FFFFFF;
+  --color-surface: rgba(255,255,255,0.7);
+  --color-glass: rgba(255,255,255,0.55);
+  --color-glass-border: rgba(0,0,0,0.06);
+  --color-text: #1A1A1A;
+  --color-text-secondary: #374151;
+  --color-text-muted: #6B7280;
+  --color-border: rgba(0,0,0,0.07);
+  --radius: 20px;
+  --radius-sm: 12px;
+  --wrap: 760px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ---- NOISE TEXTURE ---- */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.02;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 128px 128px;
+}
+
+/* ---- LAYOUT ---- */
+.wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 1.5rem; position: relative; z-index: 1; }
+
+/* ---- SCROLL REVEAL ---- */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.65s cubic-bezier(0.16,1,0.3,1), transform 0.65s cubic-bezier(0.16,1,0.3,1);
+}
+.reveal.visible { opacity: 1; transform: none; }
+.reveal-d1 { transition-delay: 0.07s; }
+.reveal-d2 { transition-delay: 0.14s; }
+.reveal-d3 { transition-delay: 0.21s; }
+
+/* ===== STICKY HEADER ===== */
+.report-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(243,242,239,0.85);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border-bottom: 1px solid var(--color-glass-border);
+  padding: 0.9rem 0;
+}
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+.header-brand .sep { color: var(--color-green); opacity: 0.8; }
+.header-brand .type { opacity: 0.45; font-weight: 500; }
+.header-meta {
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* ===== CINEMATIC HERO ===== */
+.cinema-hero {
+  position: relative;
+  height: 100vh;
+  min-height: 600px;
+}
+.cinema-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  min-height: 600px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cinema-bg {
+  position: absolute;
+  inset: 0;
+  background: #0c0c0c;
+}
+.cinema-bg-gradient {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(124,58,237,0.35), transparent 70%),
+              radial-gradient(ellipse 60% 80% at 80% 80%, rgba(101,163,13,0.15), transparent 60%);
+}
+.cinema-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.15);
+  z-index: 1;
+}
+.cinema-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 0 1.5rem;
+  width: 100%;
+  max-width: 740px;
+}
+
+/* Progress bars */
+.cinema-progress {
+  position: absolute;
+  left: 16px; right: 16px; top: 16px;
+  display: flex;
+  gap: 5px;
+  z-index: 3;
+  pointer-events: none;
+}
+.cp-seg {
+  height: 2.5px;
+  flex: 1;
+  background: rgba(255,255,255,0.18);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.cp-fill {
+  height: 100%;
+  width: 0%;
+  background: rgba(255,255,255,0.88);
+  border-radius: inherit;
+  transition: width 0.2s;
+}
+.cp-seg.done .cp-fill { width: 100%; background: rgba(255,255,255,0.55); }
+.cp-seg.active .cp-fill { width: 100%; }
+
+/* Tap zones */
+.cinema-tap { position: absolute; top: 0; bottom: 0; width: 50%; z-index: 3; background: transparent; border: 0; padding: 0; cursor: pointer; touch-action: manipulation; }
+.cinema-tap.left { left: 0; }
+.cinema-tap.right { right: 0; }
+
+/* Phases */
+.cinema-phase {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(0.97);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  width: 90vw;
+  max-width: 700px;
+}
+.cinema-phase.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.cinema-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 1rem;
+  background: rgba(101,163,13,0.15);
+  border: 1px solid rgba(101,163,13,0.3);
+  border-radius: 100px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #84CC16;
+  margin-bottom: 1.25rem;
+}
+.cinema-eyebrow .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #84CC16;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.85); }
+}
+.cinema-big {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(3.5rem, 12vw, 8rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin-bottom: 0.3rem;
+}
+.cinema-label {
+  font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+  color: rgba(255,255,255,0.65);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+}
+.cinema-sub {
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  font-weight: 500;
+  color: rgba(255,255,255,0.75);
+  margin-bottom: 1.5rem;
+}
+
+/* Typewriter */
+.tw-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 0.9em;
+  background: rgba(255,255,255,0.7);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 0.6s step-end infinite;
+}
+.tw-cursor.done { display: none; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+/* Scroll hint */
+.scroll-hint {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  opacity: 0;
+  animation: fadeHint 1s ease 4s forwards;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+@keyframes fadeHint { to { opacity: 1; } }
+.scroll-hint-text {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+}
+.scroll-hint-arrow {
+  stroke: rgba(255,255,255,0.4);
+  animation: float 2.5s ease-in-out infinite;
+}
+@keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
+
+/* ===== REPORT BODY ===== */
+#report-body { position: relative; z-index: 1; }
+
+/* ===== SECTION 1: MAIN MESSAGE ===== */
+.message-section {
+  background: #fff;
+  padding: 5rem 0 4rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.message-eyebrow {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-green);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.message-eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: 18px;
+  height: 2px;
+  background: var(--color-green);
+  border-radius: 2px;
+}
+.message-headline {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  margin-bottom: 1.75rem;
+  max-width: 560px;
+}
+.message-body {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  max-width: 560px;
+}
+.message-body p + p { margin-top: 1rem; }
+.message-body strong { color: var(--color-text); font-weight: 600; }
+
+/* Tone options toggle */
+.tone-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 2rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0.45rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 100px;
+  background: var(--color-bg);
+  transition: background 0.2s, border-color 0.2s;
+  user-select: none;
+}
+.tone-toggle:hover { background: #fff; border-color: rgba(0,0,0,0.14); }
+.tone-variants { margin-top: 1.5rem; display: none; }
+.tone-variants.open { display: block; }
+.tone-tab-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.tone-tab {
+  padding: 0.35rem 0.9rem;
+  border-radius: 100px;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tone-tab:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.tone-tab.active { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+.tone-content { display: none; }
+.tone-content.active { display: block; }
+.tone-text {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--color-text-secondary);
+  max-width: 560px;
+  padding: 1.5rem;
+  background: #FAFAF9;
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+.tone-text p + p { margin-top: 1rem; }
+.tone-text strong { color: var(--color-text); font-weight: 600; }
+.tone-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  margin-bottom: 0.75rem;
+}
+
+/* ===== SECTION 2: HERO NUMBER ===== */
+.hero-number-section {
+  background: var(--color-bg);
+  padding: 5rem 0;
+  border-bottom: 1px solid var(--color-border);
+  overflow: hidden;
+}
+.hero-number-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3rem;
+}
+.hero-number-left {
+  flex: 1;
+  min-width: 0;
+}
+.hero-number-eyebrow {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+}
+.hero-num-display {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(5rem, 16vw, 10rem);
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  color: var(--color-text);
+}
+.hero-num-unit {
+  font-family: 'DM Sans', sans-serif;
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  font-weight: 400;
+  color: var(--color-text-muted);
+  margin-top: 0.75rem;
+  letter-spacing: 0.02em;
+}
+.hero-number-right {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.hero-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1.25rem;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  min-width: 180px;
+}
+.hero-stat-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.hero-stat-label {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  font-weight: 400;
+  flex: 1;
+  line-height: 1.3;
+}
+.hero-stat-value {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+/* ===== SECTION 3: IMAGES ===== */
+.images-section {
+  background: #fff;
+  padding: 5rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.section-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 0.6rem;
+}
+.section-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  margin-bottom: 0.75rem;
+}
+.section-subtitle {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  max-width: 500px;
+  margin-bottom: 2.5rem;
+}
+.images-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.image-card {
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  transition: transform 0.3s cubic-bezier(0.23,1,0.32,1), box-shadow 0.3s;
+}
+.image-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 36px rgba(0,0,0,0.08);
+}
+
+/* Placeholder state — easy to swap: replace .img-placeholder with <img src="..."> */
+.img-placeholder {
+  aspect-ratio: 4 / 3;
+  background: linear-gradient(135deg, #EDE9FE 0%, #F3F0FF 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  position: relative;
+  overflow: hidden;
+}
+.img-placeholder::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(124,58,237,0.03) 0px,
+    rgba(124,58,237,0.03) 1px,
+    transparent 1px,
+    transparent 14px
+  );
+}
+.img-placeholder-icon { color: rgba(124,58,237,0.3); position: relative; z-index: 1; }
+.img-placeholder-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: rgba(255,255,255,0.9);
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.04em;
+}
+
+/* SWAP INSTRUCTION: To add real images, replace .img-placeholder div with:
+   <img src="PATH_TO_IMAGE" alt="Day N" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;">
+*/
+
+.image-card-footer {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--color-border);
+}
+.image-date {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  margin-bottom: 0.2rem;
+}
+.image-caption {
+  font-size: 0.74rem;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+/* ===== SECTION 4: BEHIND THE SCENES ===== */
+.ops-section {
+  background: var(--color-bg);
+  padding: 5rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.ops-diagram {
+  margin-top: 2rem;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.ops-header {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  border-bottom: 1px solid var(--color-border);
+  background: rgba(0,0,0,0.02);
+}
+.ops-header-label {
+  padding: 0.6rem 1.25rem;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  border-right: 1px solid var(--color-border);
+}
+.ops-days-row {
+  display: grid;
+  grid-template-columns: repeat(14, 1fr);
+  padding: 0 0.5rem;
+}
+.ops-day-label {
+  padding: 0.6rem 0;
+  text-align: center;
+  font-size: 0.55rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: 0.03em;
+}
+.ops-rows { padding: 0.5rem 0; }
+.ops-row {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  min-height: 48px;
+  align-items: center;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+.ops-row:last-child { border-bottom: none; }
+.ops-row-label {
+  padding: 0.5rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-right: 1px solid var(--color-border);
+}
+.ops-row-icon { flex-shrink: 0; display: flex; }
+.ops-row-text { display: flex; flex-direction: column; gap: 0.1rem; }
+.ops-row-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1;
+}
+.ops-row-freq {
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+.ops-track-simple {
+  display: grid;
+  grid-template-columns: repeat(14, 1fr);
+  gap: 3px;
+  padding: 0.5rem;
+  align-items: center;
+}
+.ops-cell-simple {
+  height: 24px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.04);
+}
+.ops-cell-simple.filled {
+  opacity: 0.85;
+}
+
+/* ===== SECTION 5: WHAT'S NEXT ===== */
+.next-section {
+  background: #fff;
+  padding: 5rem 0 4rem;
+}
+.next-eyebrow {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.next-eyebrow::before {
+  content: '';
+  display: inline-block;
+  width: 18px;
+  height: 2px;
+  background: var(--color-primary);
+  border-radius: 2px;
+}
+.next-heading {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(1.75rem, 4vw, 2.6rem);
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+  margin-bottom: 1.5rem;
+  max-width: 520px;
+  line-height: 1.15;
+}
+.next-body {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--color-text-secondary);
+  max-width: 560px;
+}
+.next-body p + p { margin-top: 1rem; }
+.next-body strong { color: var(--color-text); font-weight: 600; }
+
+/* Journey stepper */
+.journey-stepper {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+  margin: 3rem 0 0;
+  position: relative;
+}
+.journey-stepper::before {
+  content: '';
+  position: absolute;
+  left: 7%; right: 7%;
+  top: 19px;
+  height: 1px;
+  background: rgba(0,0,0,0.09);
+}
+.j-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+.j-dot {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border: 1.5px solid rgba(0,0,0,0.12);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  flex-shrink: 0;
+}
+.j-step.done .j-dot {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 6px 18px rgba(124,58,237,0.2);
+}
+.j-step.current .j-dot {
+  background: #EDE9FE;
+  border: 2px solid var(--color-primary);
+  box-shadow: 0 6px 20px rgba(124,58,237,0.18);
+}
+.j-step.pending .j-dot {
+  background: #F5F3FF;
+  border: 1.5px solid rgba(124,58,237,0.25);
+}
+.j-dot svg { width: 16px; height: 16px; }
+.j-num {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--color-text);
+  line-height: 1;
+}
+.j-step.done .j-num { color: #fff; }
+.j-step.current .j-num { color: var(--color-primary); }
+.j-step.pending .j-num { color: rgba(124,58,237,0.5); }
+.j-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  line-height: 1.25;
+}
+.j-tag {
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+/* ===== FOOTER ===== */
+.report-footer {
+  padding: 3rem 0;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.footer-brand {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+.footer-meta {
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 700px) {
+  .hero-number-inner { flex-direction: column; gap: 2rem; }
+  .hero-number-right { flex-direction: row; flex-wrap: wrap; }
+  .hero-stat-pill { min-width: 0; flex: 1; }
+  .images-grid { grid-template-columns: 1fr; }
+  .ops-header-label, .ops-row-label, .ops-milestone-spacer, .ops-legend { display: none; }
+  .ops-header { grid-template-columns: 1fr; }
+  .ops-row { grid-template-columns: 1fr; }
+  .ops-milestones { grid-template-columns: 1fr; }
+  .journey-stepper { grid-template-columns: 1fr; }
+  .journey-stepper::before { display: none; }
+  .j-step { flex-direction: row; text-align: left; }
+}
+@media (max-width: 500px) {
+  .hero-stat-pill { min-width: 100%; }
+  .tone-tab-row { gap: 0.4rem; }
+}
+</style>
+</head>
+<body>
+<div id="report-root"></div>
+
+<script>
+// ===== DATA LAYER =====
+const D = {
+  meta: {
+    reportType: "COLONY EMERGENCE",
+    brand: "Cellino",
+    reportDate: "May 1, 2026",
+    batchId: "COL-2026-009"
+  },
+  member: { id: "FM-102860", name: "Lilo", memberNum: "Founding Member #1" },
+  summary: {
+    total_colonies: 730,
+    first_emergence_day: 6,
+    cassettes_in_culture: 12
+  },
+  imaging_snapshots: [
+    {
+      day: 6,
+      date: "April 23, 2026",
+      caption: "First signs of colony formation visible across multiple cassettes",
+      // SWAP: set image_src to a base64 or URL string to display real microscopy image
+      image_src: null
+    },
+    {
+      day: 10,
+      date: "April 27, 2026",
+      caption: "iPSC colonies confirmed and growing across all groups",
+      image_src: null
+    },
+    {
+      day: 14,
+      date: "May 1, 2026",
+      caption: "Continued colony growth. Ready for harvest assessment.",
+      image_src: null
+    }
+  ],
+  // Cassette layout for the operations diagram
+  // Each cassette: id, label, group (density arm), color, seeded day (day into run)
+  cassettes: [
+    // 10K arm — light purple
+    { id: 1, label: "Cassette 1", group: "10K cells / cassette", color: "#C4B5FD", seeded: 1 },
+    { id: 2, label: "Cassette 2", group: "10K cells / cassette", color: "#C4B5FD", seeded: 1 },
+    // 50K arm — medium purple
+    { id: 3, label: "Cassette 3", group: "50K cells / cassette", color: "#8B5CF6", seeded: 1 },
+    { id: 4, label: "Cassette 4", group: "50K cells / cassette", color: "#8B5CF6", seeded: 1 },
+    { id: 5, label: "Cassette 5", group: "50K cells / cassette", color: "#8B5CF6", seeded: 2 },
+    { id: 6, label: "Cassette 6", group: "50K cells / cassette", color: "#8B5CF6", seeded: 2 },
+    { id: 7, label: "Cassette 7", group: "50K cells / cassette", color: "#8B5CF6", seeded: 2 },
+    // 100K arm — deep purple
+    { id: 8,  label: "Cassette 8",  group: "100K cells / cassette", color: "#5B21B6", seeded: 1 },
+    { id: 9,  label: "Cassette 9",  group: "100K cells / cassette", color: "#5B21B6", seeded: 1 },
+    { id: 10, label: "Cassette 10", group: "100K cells / cassette", color: "#5B21B6", seeded: 2 },
+    { id: 11, label: "Cassette 11", group: "100K cells / cassette", color: "#5B21B6", seeded: 2 },
+    { id: 12, label: "Cassette 12", group: "100K cells / cassette", color: "#5B21B6", seeded: 2 },
+  ],
+  totalDays: 14,
+  milestones: {
+    6:  "Day 6: First colonies",
+    14: "Day 14: Harvest ready"
+  }
+};
+
+// ===== SVG ICONS =====
+const iconCheck = `<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+const iconMicroscope = (color, size) => `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 21h12"/><path d="M12 21v-4"/><path d="M8 17h8"/><circle cx="12" cy="7" r="3"/><path d="M15.5 4.5L18 2l1.5 1.5L17 6"/><path d="M9 10l-3 3"/></svg>`;
+
+// ===== TONE VARIANTS =====
+const toneVariants = [
+  {
+    id: "poetic",
+    label: "Poetic",
+    headline: "First signs of life. Change is coming.",
+    body: `<p>Something is happening inside those cassettes, and you're the reason it is.</p>
+<p>After your cells were reprogrammed and placed into culture, they began to do something that no technology alone can orchestrate: they started becoming. Over 14 days, 12 cassettes, and thousands of images later, we can tell you with confidence that the process is working.</p>
+<p><strong>730 colonies have emerged.</strong> Each one is a small cluster of cells in the middle of an identity change, turning from the immune cells you were born with into something more open-ended, a foundation for whatever biology asks of them next.</p>
+<p>You're at the edge of something real. Your cells are finding their way.</p>`
+  },
+  {
+    id: "witty",
+    label: "Witty",
+    headline: "Your cells didn't get the memo that change is hard.",
+    body: `<p>Most things take longer than expected. Your cells apparently didn't read that playbook.</p>
+<p>Day 6 into culture, before we had even started rehearsing our "patience is a virtue" speech, colonies appeared. Across all 12 cassettes. From cells that were ordinary immune cells just weeks ago.</p>
+<p>By Day 14, we had counted <strong>730 colonies</strong> and honestly run out of superlatives. This is what successful reprogramming looks like: not a single point of failure, not a lucky break, but a system doing exactly what it was designed to do, quietly and thoroughly, while you went about your life.</p>
+<p>Change is coming. Your cells are already there.</p>`
+  },
+  {
+    id: "nurturing",
+    label: "Nurturing",
+    headline: "Something beautiful is growing. And we've been watching every day.",
+    body: `<p>We want you to know that in the weeks since your blood draw, your cells have not been left alone for a single day. Every morning, our imaging system captured a full picture of what was happening inside each cassette. Every data point was reviewed. Every cassette accounted for.</p>
+<p>What we saw was something worth sharing. On Day 6, the first colonies appeared: small clusters of cells quietly beginning to change who they are. By Day 14, <strong>730 colonies were growing</strong> across all 12 cassettes in culture.</p>
+<p>This is the part of the journey where your biology and our technology are working together. You're in good hands, and so are your cells.</p>`
+  }
+];
+
+// ===== BUILD FUNCTIONS =====
+
+function buildHeader() {
+  return `
+  <header class="report-header">
+    <div class="wrap">
+      <div class="header-inner">
+        <div class="header-brand">
+          Cellino <span class="sep">·</span> <span class="type">${D.meta.reportType}</span>
+        </div>
+        <div class="header-meta">${D.member.name} &nbsp;·&nbsp; ${D.meta.reportDate}</div>
+      </div>
+    </div>
+  </header>`;
+}
+
+function buildCinema() {
+  const phases = [
+    // Phase 0: typewriter greeting
+    `<div class="cinema-phase active" id="cp-0">
+      <div style="font-family:'DM Serif Display',serif;font-size:clamp(1.4rem,4vw,2.8rem);line-height:1.25;color:#fff;text-align:center;max-width:600px;margin:0 auto;">
+        <span id="tw-text"></span><span class="tw-cursor" id="tw-cursor"></span>
+      </div>
+    </div>`,
+    // Phase 1: Day 6
+    `<div class="cinema-phase" id="cp-1">
+      <div class="cinema-sub">Your cells didn't wait long.</div>
+      <div class="cinema-big">Day 6</div>
+      <div class="cinema-label">first colonies emerged</div>
+    </div>`,
+    // Phase 2: colony count
+    `<div class="cinema-phase" id="cp-2">
+      <div class="cinema-sub">And they kept growing.</div>
+      <div class="cinema-big">${D.summary.total_colonies.toLocaleString()}</div>
+      <div class="cinema-label">colonies across all cassettes</div>
+    </div>`,
+    // Phase 3: cassettes
+    `<div class="cinema-phase" id="cp-3">
+      <div class="cinema-sub">Every single one producing.</div>
+      <div class="cinema-big">${D.summary.cassettes_in_culture}/${D.summary.cassettes_in_culture}</div>
+      <div class="cinema-label">cassettes with active colonies</div>
+    </div>`,
+    // Phase 4: CTA
+    `<div class="cinema-phase" id="cp-4">
+      <div class="cinema-eyebrow"><span class="dot"></span> Colony Emergence · ${D.meta.reportDate}</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:clamp(1.6rem,4vw,3rem);color:#fff;line-height:1.2;max-width:520px;margin:0 auto 2.5rem;text-align:center;">Say hello to your colonies.</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem;opacity:0.65;">
+        <span style="font-size:0.62rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#fff;">Scroll to see your report</span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:float 2s ease-in-out infinite;"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>`
+  ];
+  const numPhases = phases.length;
+  const progressSegs = Array.from({length: numPhases}, (_,i) =>
+    `<div class="cp-seg${i===0?' active':''}" data-seg="${i}"><div class="cp-fill"></div></div>`
+  ).join('');
+
+  return `
+  <section class="cinema-hero">
+    <div class="cinema-sticky">
+      <div class="cinema-bg">
+        <div class="cinema-bg-gradient"></div>
+      </div>
+      <div class="cinema-overlay"></div>
+      <div class="cinema-progress">${progressSegs}</div>
+      <button class="cinema-tap left" id="tap-left" aria-label="Previous"></button>
+      <button class="cinema-tap right" id="tap-right" aria-label="Next"></button>
+      <div class="cinema-content" style="position:relative;z-index:2;">
+        ${phases.join('')}
+      </div>
+      <div class="scroll-hint" id="scroll-hint">
+        <span class="scroll-hint-text">Scroll to explore</span>
+        <svg class="scroll-hint-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+  </section>`;
+}
+
+function buildMessageSection() {
+  const first = toneVariants[0];
+  const tabsHTML = toneVariants.map((v,i) =>
+    `<button class="tone-tab${i===0?' active':''}" data-tone="${v.id}">${v.label}</button>`
+  ).join('');
+  const contentsHTML = toneVariants.map((v,i) =>
+    `<div class="tone-content${i===0?' active':''}" data-content="${v.id}">
+      <div class="tone-label">${v.label} version</div>
+      <div class="tone-text">${v.body}</div>
+    </div>`
+  ).join('');
+
+  return `
+  <section class="message-section" id="section-message">
+    <div class="wrap">
+      <div class="message-eyebrow reveal">The Story So Far</div>
+      <div class="message-headline reveal reveal-d1">${first.headline}</div>
+      <div class="message-body reveal reveal-d2">${first.body}</div>
+
+      <button class="tone-toggle reveal reveal-d3" id="tone-toggle-btn">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>
+        See alternate versions
+      </button>
+      <div class="tone-variants" id="tone-variants">
+        <div class="tone-tab-row">${tabsHTML}</div>
+        ${contentsHTML}
+      </div>
+    </div>
+  </section>`;
+}
+
+function buildHeroNumber() {
+  const stats = [
+    { dot: "#C4B5FD", label: "First colonies appeared", value: `Day ${D.summary.first_emergence_day}` },
+    { dot: "#8B5CF6", label: "Cassettes in culture", value: `${D.summary.cassettes_in_culture} / ${D.summary.cassettes_in_culture}` },
+    { dot: "#65A30D", label: "Days of daily imaging", value: `${D.totalDays}` },
+  ];
+  const pillsHTML = stats.map(s => `
+    <div class="hero-stat-pill">
+      <div class="hero-stat-dot" style="background:${s.dot};"></div>
+      <div class="hero-stat-label">${s.label}</div>
+      <div class="hero-stat-value">${s.value}</div>
+    </div>`).join('');
+
+  return `
+  <section class="hero-number-section" id="section-colonies">
+    <div class="wrap">
+      <div class="hero-number-inner">
+        <div class="hero-number-left reveal">
+          <div class="hero-number-eyebrow">Colonies Growing</div>
+          <div class="hero-num-display" id="hero-count">0</div>
+          <div class="hero-num-unit">iPSC colonies across all cassettes at Day 14</div>
+        </div>
+        <div class="hero-number-right reveal reveal-d1">
+          ${pillsHTML}
+        </div>
+      </div>
+    </div>
+  </section>`;
+}
+
+function buildImages() {
+  const cardsHTML = D.imaging_snapshots.map(snap => {
+    const imageContent = snap.image_src
+      ? `<img src="${snap.image_src}" alt="Day ${snap.day}" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;">`
+      : `<div class="img-placeholder">
+           <div class="img-placeholder-icon">${iconMicroscope('rgba(124,58,237,0.35)', 32)}</div>
+           <div class="img-placeholder-badge">Day ${snap.day}</div>
+         </div>`;
+    return `
+    <div class="image-card reveal">
+      ${imageContent}
+      <div class="image-card-footer">
+        <div class="image-date">${snap.date}</div>
+        <div class="image-caption">${snap.caption}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `
+  <section class="images-section" id="section-images">
+    <div class="wrap">
+      <div class="section-label reveal">What We Saw</div>
+      <div class="section-title reveal reveal-d1">14 days. Every cassette. Every day.</div>
+      <div class="section-subtitle reveal reveal-d2">Representative images captured by the Nebula automated imaging system at key timepoints during the emergence window.</div>
+      <div class="images-grid">${cardsHTML}</div>
+    </div>
+  </section>`;
+}
+
+function buildOpsSection() {
+  const days = Array.from({length: D.totalDays}, (_,i) => i + 1);
+
+  // Four operations — what Cellino does every day for every cassette
+  const ops = [
+    {
+      label: "Seeding",
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>`,
+      color: "#7C3AED",
+      days: "Day 0 only",
+      // Which day column is filled (1-indexed in our 1–14 range; day 0 = before D1 so we show it as a badge)
+      dayOnce: 0
+    },
+    {
+      label: "Media Change",
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-4-7-11-7-11S5 11 5 15a7 7 0 0 0 7 7z"/></svg>`,
+      color: "#2563EB",
+      days: "Every day",
+      dayOnce: null
+    },
+    {
+      label: "Imaging",
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><circle cx="12" cy="14" r="3"/></svg>`,
+      color: "#059669",
+      days: "Every day",
+      dayOnce: null
+    },
+    {
+      label: "Analysis",
+      icon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`,
+      color: "#D97706",
+      days: "Every day",
+      dayOnce: null
+    }
+  ];
+
+  const daysHeaderHTML = days.map(d =>
+    `<div class="ops-day-label">D${d}</div>`
+  ).join('');
+
+  const rowsHTML = ops.map(op => {
+    const cellsHTML = days.map((d, idx) => {
+      // Seeding: only show on day 1 slot (representing day 0 seeding before culture begins)
+      const filled = op.dayOnce === 0 ? idx === 0 : op.dayOnce === null;
+      return `<div class="ops-cell-simple${filled ? ' filled' : ''}" style="${filled ? `background:${op.color};` : ''}"></div>`;
+    }).join('');
+
+    return `
+    <div class="ops-row">
+      <div class="ops-row-label">
+        <span class="ops-row-icon" style="color:${op.color};">${op.icon}</span>
+        <span class="ops-row-text">
+          <span class="ops-row-name">${op.label}</span>
+          <span class="ops-row-freq">${op.days}</span>
+        </span>
+      </div>
+      <div class="ops-track-simple">${cellsHTML}</div>
+    </div>`;
+  }).join('');
+
+  // Total ops count: 1 seeding + 14 media + 14 imaging + 14 analysis = 43 per cassette × 12 cassettes
+  const totalOps = (1 + 14 + 14 + 14) * D.summary.cassettes_in_culture;
+
+  return `
+  <section class="ops-section" id="section-ops">
+    <div class="wrap">
+      <div class="section-label reveal">A Peek Behind the Scenes</div>
+      <div class="section-title reveal reveal-d1">Every day. Every cassette. No exceptions.</div>
+      <div class="section-subtitle reveal reveal-d2">While your cells were growing, our team and our automated systems were running the same four operations across all ${D.summary.cassettes_in_culture} cassettes, every single day.</div>
+
+      <div class="ops-diagram reveal reveal-d3">
+        <div class="ops-header">
+          <div class="ops-header-label">Operation</div>
+          <div class="ops-days-row">${daysHeaderHTML}</div>
+        </div>
+        <div class="ops-rows">${rowsHTML}</div>
+      </div>
+
+      <div class="ops-total reveal" style="margin-top:1.25rem;display:flex;align-items:center;gap:0.75rem;padding:1rem 1.25rem;background:#fff;border:1px solid var(--color-border);border-radius:var(--radius-sm);">
+        <div style="font-family:'DM Serif Display',serif;font-size:2rem;line-height:1;color:var(--color-text);">${totalOps.toLocaleString()}</div>
+        <div style="font-size:0.8rem;color:var(--color-text-secondary);line-height:1.5;">individual operations performed<br>across your 14-day run</div>
+      </div>
+    </div>
+  </section>`;
+}
+
+function buildWhatsNext() {
+  const svgCheck16 = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+  const steps = [
+    { label: "Blood Draw", status: "done" },
+    { label: "Immune Cell Preservation", status: "done" },
+    { label: "Reprogramming to iPSCs", status: "current", tag: "You are here" },
+    { label: "Growing Your Best iPSCs", status: "pending" },
+    { label: "Final Testing & Validation", status: "pending" }
+  ];
+  const stepsHTML = steps.map((s,i) => {
+    const dotInner = s.status === 'done'
+      ? svgCheck16
+      : `<span class="j-num">${i+1}</span>`;
+    return `
+    <div class="j-step ${s.status}">
+      <div class="j-dot">${dotInner}</div>
+      <div class="j-label">${s.label}</div>
+      ${s.tag ? `<div class="j-tag">${s.tag}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  return `
+  <section class="next-section" id="section-next">
+    <div class="wrap">
+      <div class="next-eyebrow reveal">What's Next</div>
+      <div class="next-heading reveal reveal-d1">The harvest is coming.</div>
+      <div class="next-body reveal reveal-d2">
+        <p>This is the moment the whole run has been building toward. Over the next few days, your 730 colonies will be assessed and the best-performing ones selected for harvest. That means collecting the cells from the cassette and beginning <strong>polyclonal expansion</strong>, where your iPSCs get room to grow into a larger, more robust population.</p>
+        <p>You'll hear from us again when the harvest is complete. That report will tell you how many cells were collected, how they look, and what comes next on the road to <strong>your personalized iPSC line</strong>.</p>
+        <p>This is still early. But your cells are doing exactly what they're supposed to do, and we're with them every step of the way.</p>
+      </div>
+
+      <div class="journey-stepper reveal reveal-d3">
+        ${stepsHTML}
+      </div>
+    </div>
+  </section>`;
+}
+
+function buildFooter() {
+  return `
+  <footer class="report-footer">
+    <div class="wrap">
+      <div class="footer-inner">
+        <div class="footer-brand">Cellino</div>
+        <div class="footer-meta">${D.member.id} · ${D.meta.batchId} · ${D.meta.reportDate}</div>
+      </div>
+    </div>
+  </footer>`;
+}
+
+// ===== MOUNT =====
+document.getElementById('report-root').innerHTML =
+  buildHeader() +
+  buildCinema() +
+  `<div id="report-body">` +
+    buildMessageSection() +
+    buildHeroNumber() +
+    buildImages() +
+    buildOpsSection() +
+    buildWhatsNext() +
+    buildFooter() +
+  `</div>`;
+
+// ===== CINEMATIC ENGINE =====
+let currentPhase = 0;
+const NUM_PHASES = 5;
+
+function getPhase(i) { return document.getElementById(`cp-${i}`); }
+function getSeg(i) { return document.querySelector(`[data-seg="${i}"]`); }
+
+function goToPhase(i) {
+  const prev = getPhase(currentPhase);
+  const prevSeg = getSeg(currentPhase);
+  if (prev) prev.classList.remove('active');
+  if (prevSeg) { prevSeg.classList.remove('active'); prevSeg.classList.add('done'); }
+
+  currentPhase = Math.max(0, Math.min(NUM_PHASES - 1, i));
+  const next = getPhase(currentPhase);
+  const nextSeg = getSeg(currentPhase);
+  if (next) next.classList.add('active');
+  if (nextSeg) nextSeg.classList.add('active');
+
+  // Last phase: show scroll hint
+  if (currentPhase === NUM_PHASES - 1) {
+    const hint = document.getElementById('scroll-hint');
+    if (hint) hint.style.display = 'none';
+  }
+}
+
+function runTypewriter() {
+  const el = document.getElementById('tw-text');
+  const cursor = document.getElementById('tw-cursor');
+  const text = `${D.member.name}, your cells are becoming something new.`;
+  let i = 0;
+  const timer = setInterval(() => {
+    if (i < text.length) {
+      el.textContent += text[i++];
+    } else {
+      clearInterval(timer);
+      setTimeout(() => {
+        cursor.classList.add('done');
+        goToPhase(1);
+      }, 1200);
+    }
+  }, 42);
+}
+
+// Tap handlers
+document.getElementById('tap-left').addEventListener('click', () => {
+  if (currentPhase > 0) goToPhase(currentPhase - 1);
+});
+document.getElementById('tap-right').addEventListener('click', () => {
+  if (currentPhase < NUM_PHASES - 1) goToPhase(currentPhase + 1);
+});
+
+// ===== SCROLL REVEAL ENGINE =====
+function initReveal() {
+  const els = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -36px 0px' });
+  els.forEach(el => obs.observe(el));
+}
+
+// ===== ANIMATED COUNTER =====
+function initCounters() {
+  const el = document.getElementById('hero-count');
+  if (!el) return;
+  const target = D.summary.total_colonies;
+  const duration = 1800;
+  const start = performance.now();
+
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      obs.disconnect();
+      function tick(now) {
+        const t = Math.min(1, (now - start) / duration);
+        const eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = Math.round(target * eased).toLocaleString();
+        if (t < 1) requestAnimationFrame(tick);
+        else el.textContent = target.toLocaleString();
+      }
+      requestAnimationFrame(tick);
+    });
+  }, { threshold: 0.3 });
+  obs.observe(el);
+}
+
+// ===== INIT ON LOAD =====
+runTypewriter();
+initReveal();
+initCounters();
+
+// ===== TONE TOGGLE =====
+document.getElementById('tone-toggle-btn').addEventListener('click', function() {
+  const variants = document.getElementById('tone-variants');
+  variants.classList.toggle('open');
+  this.textContent = variants.classList.contains('open') ? '↑ Hide versions' : '✦ See alternate versions';
+});
+
+document.querySelectorAll('.tone-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    const id = this.dataset.tone;
+    // Update tabs
+    document.querySelectorAll('.tone-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    // Update contents
+    document.querySelectorAll('.tone-content').forEach(c => c.classList.remove('active'));
+    document.querySelector(`[data-content="${id}"]`).classList.add('active');
+    // Update headline + body above
+    const variant = toneVariants.find(v => v.id === id);
+    if (variant) {
+      document.querySelector('.message-headline').textContent = variant.headline;
+      document.querySelector('.message-body').innerHTML = variant.body;
+    }
+  });
+});
+</script>
+</body>
+</html>
